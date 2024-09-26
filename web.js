@@ -48,25 +48,30 @@ app.get('/getEventData', async (req, res) => {
 });
 
 // 참여자 정보를 저장하는 API (주문번호 추가)
-app.post('/eventData', async (req, res) => {
-    const { member_id, phone, name, order_number } = req.body;
-    const currentTime = new Date();  // 현재 시간 (UTC 기준)
-
+app.get('/getEventData', async (req, res) => {
     try {
         const db = await connectToDatabase();
         const collection = db.collection('EventChoice');
 
-        // 중복 확인 없이 새 회원 정보와 주문번호 저장
-        await collection.insertOne({
-            member_id,
-            phone,
-            name,
-            order_number,  // 주문번호 저장
-            participation_time: currentTime  // UTC 시간으로 참여 시각 저장
-        });
-        res.status(200).json({ message: '회원 정보가 성공적으로 저장되었습니다.' });
+        // 주문번호가 중복될 경우 가장 빠른 시간의 데이터만 가져오는 쿼리
+        const participants = await collection.aggregate([
+            { $sort: { order_number: 1, participation_time: 1 } }, // 주문번호와 참여 시간을 기준으로 오름차순 정렬
+            {
+                $group: {
+                    _id: "$order_number", // 주문번호로 그룹화
+                    member_id: { $first: "$member_id" }, // 가장 빠른 시간의 회원 ID 선택
+                    name: { $first: "$name" }, // 가장 빠른 시간의 이름 선택
+                    phone: { $first: "$phone" }, // 가장 빠른 시간의 전화번호 선택
+                    participation_time: { $first: "$participation_time" }, // 가장 빠른 시간의 참여 시간 선택
+                    order_number: { $first: "$order_number" } // 주문번호
+                }
+            }
+        ]).toArray();
+
+        // 클라이언트로 필터링된 데이터를 전송
+        res.status(200).json(participants);
     } catch (error) {
-        console.error('저장 중 오류 발생:', error);
+        console.error('데이터 조회 중 오류 발생:', error);
         res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
 });
