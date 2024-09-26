@@ -31,22 +31,15 @@ async function connectToDatabase() {
 }
 
 // API 라우트 설정
-app.post('/api/sendMemberData', async (req, res) => {
+app.post('/eventData', async (req, res) => {
     const { member_id, phone, name } = req.body;
     const currentTime = new Date();  // 현재 시간 (UTC 기준)
 
     try {
         const db = await connectToDatabase();
-        const collection = db.collection('members');
+        const collection = db.collection('EventChoice');
 
-        // 회원 중복 확인
-        const existingMember = await collection.findOne({ member_id });
-
-        if (existingMember) {
-            return res.status(400).json({ message: '이미 참여한 회원입니다.' });
-        }
-
-        // 새 회원 정보 저장 (member_id, phone, name, 참여 시각)
+        // 중복 확인 없이 새 회원 정보 저장 (member_id, phone, name, 참여 시각)
         await collection.insertOne({
             member_id,
             phone,
@@ -60,10 +53,10 @@ app.post('/api/sendMemberData', async (req, res) => {
     }
 });
 
-app.get('/api/getParticipantData', async (req, res) => {
+app.get('/eventChoice', async (req, res) => {
     try {
         const db = await connectToDatabase();
-        const collection = db.collection('members');
+        const collection = db.collection('EventChoice');  // 여기서 컬렉션 이름을 'EventChoice'로 수정
         
         // MongoDB에서 모든 참여자 데이터를 가져옴
         const participants = await collection.find({}).toArray();
