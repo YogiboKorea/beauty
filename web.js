@@ -30,7 +30,24 @@ async function connectToDatabase() {
     }
 }
 
-// API 라우트 설정
+// 이벤트 참여 데이터를 클라이언트로 보내는 API
+app.get('/getEventData', async (req, res) => {
+    try {
+        const db = await connectToDatabase();
+        const collection = db.collection('EventChoice');
+        
+        // MongoDB에서 모든 참여자 데이터를 가져옴
+        const participants = await collection.find({}).toArray();
+
+        // 데이터를 클라이언트로 전송
+        res.status(200).json(participants);
+    } catch (error) {
+        console.error('데이터 조회 중 오류 발생:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+    }
+});
+
+// 참여자 정보를 저장하는 API
 app.post('/eventData', async (req, res) => {
     const { member_id, phone, name } = req.body;
     const currentTime = new Date();  // 현재 시간 (UTC 기준)
@@ -39,7 +56,7 @@ app.post('/eventData', async (req, res) => {
         const db = await connectToDatabase();
         const collection = db.collection('EventChoice');
 
-        // 중복 확인 없이 새 회원 정보 저장 (member_id, phone, name, 참여 시각)
+        // 중복 확인 없이 새 회원 정보 저장
         await collection.insertOne({
             member_id,
             phone,
@@ -49,21 +66,6 @@ app.post('/eventData', async (req, res) => {
         res.status(200).json({ message: '회원 정보가 성공적으로 저장되었습니다.' });
     } catch (error) {
         console.error('저장 중 오류 발생:', error);
-        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
-    }
-});
-
-app.get('/eventChoice', async (req, res) => {
-    try {
-        const db = await connectToDatabase();
-        const collection = db.collection('EventChoice');  // 여기서 컬렉션 이름을 'EventChoice'로 수정
-        
-        // MongoDB에서 모든 참여자 데이터를 가져옴
-        const participants = await collection.find({}).toArray();
-
-        res.status(200).json(participants);
-    } catch (error) {
-        console.error('데이터 조회 중 오류 발생:', error);
         res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
 });
