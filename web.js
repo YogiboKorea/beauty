@@ -47,20 +47,21 @@ app.get('/getEventData', async (req, res) => {
     }
 });
 
-// 참여자 정보를 저장하는 API
+// 참여자 정보를 저장하는 API (주문번호 추가)
 app.post('/eventData', async (req, res) => {
-    const { member_id, phone, name } = req.body;
+    const { member_id, phone, name, order_number } = req.body;
     const currentTime = new Date();  // 현재 시간 (UTC 기준)
 
     try {
         const db = await connectToDatabase();
         const collection = db.collection('EventChoice');
 
-        // 중복 확인 없이 새 회원 정보 저장
+        // 중복 확인 없이 새 회원 정보와 주문번호 저장
         await collection.insertOne({
             member_id,
             phone,
             name,
+            order_number,  // 주문번호 저장
             participation_time: currentTime  // UTC 시간으로 참여 시각 저장
         });
         res.status(200).json({ message: '회원 정보가 성공적으로 저장되었습니다.' });
